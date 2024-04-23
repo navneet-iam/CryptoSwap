@@ -8,7 +8,7 @@ import { useAccount } from 'wagmi'
 import toast, { Toaster } from 'react-hot-toast'
 import NavItems from './NavItems'
 
-const Header = () => {
+const Header = ({setcomp}) => {
   const [tokenBalComp, setTokenBalComp] = useState()
 
   const { address } = useAccount()
@@ -32,7 +32,7 @@ const Header = () => {
     <div className='fixed left-0 top-0 w-full px-8 py-4 flex items-center justify-between'>
       <div className='flex items-center'>
         <img src='./cslogo.png' className='h-12' />
-        <NavItems />
+        <NavItems setcomp={setcomp}/>
       </div>
 
       <div className='flex items-center'>{tokenBalComp}</div>

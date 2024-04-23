@@ -1,13 +1,20 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { ArrowSmUpIcon } from '@heroicons/react/outline'
 
-const NavItems = () => {
+const NavItems = ({setcomp}) => {
   const SWAP = 'Swap'
   const AddLiq = 'Add Liquidity'
   const StakeMe = 'StakeMe'
   // const CHART = 'Charts'
 
-  const [selectedNavItem, setSelectedNavItem] = useState(SWAP)
+  const [selectedNavItem, setSelectedNavItem] = useState(SWAP);
+
+  useEffect(()=>{
+    if(selectedNavItem === AddLiq){
+      setcomp(true);
+    }
+    else setcomp(false);
+  }, [selectedNavItem]);
 
   return (
     <div className='bg-zinc-900 h-fit flex items-center justify-around rounded-full mx-6'>

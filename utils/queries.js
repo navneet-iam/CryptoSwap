@@ -51,10 +51,29 @@ export async function swapTokenToEth(tokenName, amount) {
   }
 }
 
+export async function addLiquidity(srcToken, destToken, amount1, amount2) {
+  try {
+    const contractObj = await contract()
+
+    const data = await contractObj.addLiquidity(
+      srcToken,
+      destToken,
+      toWei(amount1),
+      toWei(amount2),
+    )
+    console.log("done ", data);
+    const receipt = await data.wait()
+    return receipt
+  } catch (e) {
+    return parseErrorMsg(e)
+  }
+}
+
 export async function swapTokenToToken(srcToken, destToken, amount) {
   try {
     const contractObj = await contract()
     console.log("check", srcToken, destToken, amount, toWei(amount));
+
     const data = await contractObj.swapTokens(
       srcToken,
       destToken,
@@ -65,6 +84,21 @@ export async function swapTokenToToken(srcToken, destToken, amount) {
     return receipt
   } catch (e) {
     return parseErrorMsg(e)
+  }
+}
+
+export async function getRate(srcToken, destToken){
+  try {
+    const contractObj = await contract()
+
+    const rateData = await contractObj.getAmountOut(srcToken, destToken, toWei(1));
+
+    const result = parseFloat(ethers.utils.formatEther(rateData)).toFixed(4);
+    console.log("rate", result);
+
+    return result;
+  } catch (error) {
+    return parseErrorMsg(error)
   }
 }
 

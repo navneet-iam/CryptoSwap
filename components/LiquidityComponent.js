@@ -3,23 +3,20 @@ import {
   getRate,
   hasValidAllowance,
   increaseAllowance,
-  swapEthToToken,
-  swapTokenToEth,
-  swapTokenToToken,
+  addLiquidity,
 } from '../utils/queries'
 
-import { CogIcon, ArrowSmDownIcon } from '@heroicons/react/outline'
+import { CogIcon } from '@heroicons/react/outline'
 import SwapField from './SwapField'
 import TransactionStatus from './TransactionStatus'
 import toast, { Toaster } from 'react-hot-toast'
-import { DEFAULT_VALUE, ETH } from '../utils/SupportedCoins'
 import { toEth, toWei } from '../utils/ether-utils'
 import { useAccount } from 'wagmi'
 
-const SwapComponent = () => {
-  const [srcToken, setSrcToken] = useState(ETH)
-  const [destToken, setDestToken] = useState(DEFAULT_VALUE)
-
+const LiquidityComponent = () => {
+  const [srcToken, setSrcToken] = useState("CoinA")
+  const [destToken, setDestToken] = useState("CoinB")
+    const [pool, setPool] = useState("pool1");
   const [inputValue, setInputValue] = useState()
   const [outputValue, setOutputValue] = useState()
 
@@ -31,28 +28,7 @@ const SwapComponent = () => {
   const INCREASE_ALLOWANCE = 'Increase allowance'
   const ENTER_AMOUNT = 'Enter an amount'
   const CONNECT_WALLET = 'Connect wallet'
-  const SWAP = 'Swap'
-
-  const srcTokenObj = {
-    id: 'srcToken',
-    value: inputValue,
-    setValue: setInputValue,
-    defaultValue: srcToken,
-    ignoreValue: destToken,
-    setToken: setSrcToken,
-  }
-
-  const destTokenObj = {
-    id: 'destToken',
-    value: outputValue,
-    setValue: setOutputValue,
-    defaultValue: destToken,
-    ignoreValue: srcToken,
-    setToken: setDestToken,
-  }
-
-  const [srcTokenComp, setSrcTokenComp] = useState()
-  const [destTokenComp, setDestTokenComp] = useState()
+  const SWAP = 'ADD'
 
   const [swapBtnText, setSwapBtnText] = useState(ENTER_AMOUNT)
   const [txPending, setTxPending] = useState(false)
@@ -79,21 +55,12 @@ const SwapComponent = () => {
     )
       populateOutputValue(inputValue)
 
-    setSrcTokenComp(<SwapField obj={srcTokenObj} ref={inputValueRef} />)
-
     if (inputValue?.length === 0) setOutputValue('')
   }, [inputValue, destToken])
 
   const getExrate = async() =>{
-    if((srcToken === "CoinB" && destToken === "CoinA") ||(srcToken === "CoinC" && destToken === "CoinA") || (srcToken === "CoinC" && destToken === "CoinB")){
-      const res = await getRate(destToken, srcToken);
-      res = (1/res).toFixed(4);
-      setExchgRate(res);
-    }
-    else {
       const res = await getRate(srcToken, destToken);
       setExchgRate(res);
-    }
   }
 
   useEffect(()=>{
@@ -108,31 +75,46 @@ const SwapComponent = () => {
     )
       populateInputValue(outputValue)
 
-    setDestTokenComp(<SwapField obj={destTokenObj} ref={outputValueRef} />)
-
     if (outputValue?.length === 0) setInputValue('')
-
-    // Resetting the isReversed value if its set
-    if (isReversed.current) isReversed.current = false
   }, [outputValue, srcToken])
 
+  const [value, setValue] = useState('')
+
   return (
+    <>
     <div className='bg-zinc-900 w-[35%] p-4 px-6 mgr rounded-xl'>
       <div className='flex items-center justify-between py-4 px-1'>
-        <p>Swap</p>
+        <p>Add Liquidity</p>
         <CogIcon className='h-6' />
       </div>
-      <div className='relative bg-[#212429] p-4 py-6 rounded-xl mb-2 border-[2px] border-transparent hover:border-zinc-600'>
-        {srcTokenComp}
-
-        <ArrowSmDownIcon
-          className='absolute left-1/2 -translate-x-1/2 -bottom-6 h-10 p-1 bg-[#212429] border-4 border-zinc-900 text-zinc-300 rounded-xl cursor-pointer hover:scale-110'
-          onClick={handleReverseExchange}
-        />
+      <div className='bg-[#212429] p-4 py-6 rounded-xl mt-2 border-[2px] border-transparent hover:border-zinc-600 flex items-center'>
+        {/* {destTokenComp} */}
+        <input
+        ref={inputValueRef}
+        className='w-full outline-none h-8 px-2 appearance-none text-3xl bg-transparent'
+        type={'number'}
+        value={inputValue}
+        placeholder={'0.0'}
+        onChange={e => {
+          setInputValue(e.target.value)
+        }}
+      />
+        CoinA
       </div>
 
-      <div className='bg-[#212429] p-4 py-6 rounded-xl mt-2 border-[2px] border-transparent hover:border-zinc-600'>
-        {destTokenComp}
+      <div className='bg-[#212429] p-4 py-6 rounded-xl mt-2 border-[2px] border-transparent hover:border-zinc-600 flex items-center'>
+        {/* {destTokenComp} */}
+        <input
+        ref={outputValueRef}
+        className='w-full outline-none h-8 px-2 appearance-none text-3xl bg-transparent'
+        type={'number'}
+        value={outputValue}
+        placeholder={'0.0'}
+        onChange={e => {
+          setOutputValue(e.target.value)
+        }}
+      />
+        CoinB
       </div>
 
       <button
@@ -145,48 +127,65 @@ const SwapComponent = () => {
         {swapBtnText}
       </button>
 
-      <button
-        className="p-4 w-full my-2 rounded-xl bg-zinc-800"
-        onClick={() => {}}
-      >
-        {
-          (srcToken != DEFAULT_VALUE && destToken != DEFAULT_VALUE) ?
-          srcToken === "Eth" ? 
-          <>1 ETH = 10000 {destToken}</> :
-          destToken === "Eth" ? 
-          <>1 {srcToken} = 0.0001 ETH</> :
-          <>1 {srcToken} = {exchgRate} {destToken}</>
-          :
-          <>Exchange rate</>
-        }
-      </button>
-
       {txPending && <TransactionStatus />}
 
       <Toaster />
     </div>
+    <div className='bg-zinc-900 w-[35%] p-4 px-6 mgr rounded-xl mt-5'>
+    <p>Available pools</p>
+    <div className='flex flex-wrap justify-evenly'>
+    <button
+        className="p-4  my-2 rounded-xl bg-zinc-800"
+        onClick={() => {}}
+      >
+        CoinA/CoinB
+      </button>
+    <button
+        className="p-4 my-2 rounded-xl bg-zinc-800"
+        onClick={() => {}}
+      >
+        CoinB/CoinC
+      </button>
+    <button
+        className="p-4  my-2 rounded-xl bg-zinc-800"
+        onClick={() => {}}
+      >
+        CoinA/CoinC
+      </button>
+      </div>
+        </div>
+      </>
   )
 
   async function handleSwap() {
-    if (srcToken === ETH && destToken !== ETH) {
-      performSwap()
-    } else {
+
       // Check whether there is allowance when the swap deals with tokenToEth/tokenToToken
       setTxPending(true)
-      const result = await hasValidAllowance(address, srcToken, inputValue)
+      const result1 = await hasValidAllowance(address, srcToken, inputValue)
+      setTxPending(false)
+      setTxPending(true)
+      const result2 = await hasValidAllowance(address, destToken, outputValue)
       setTxPending(false)
 
-      if (result) performSwap()
-      else handleInsufficientAllowance()
-    }
+      if (result1 && result2) performSwap()
+      else handleInsufficientAllowance(result1, result2)
+
   }
 
-  async function handleIncreaseAllowance() {
+  async function handleIncreaseAllowance(result1, result2) {
     // Increase the allowance
     console.log("clicked");
-    setTxPending(true)
-    await increaseAllowance(srcToken, inputValue)
-    setTxPending(false)
+    if(!result1){
+        setTxPending(true)
+        await increaseAllowance(srcToken, inputValue);
+        setTxPending(false)
+    }
+
+    if(!result2){
+        setTxPending(true)
+        await increaseAllowance(destToken, outputValue);
+        setTxPending(false)
+    }
 
     // Set the swapbtn to "Swap" again
     setSwapBtnText(SWAP)
@@ -219,21 +218,12 @@ const SwapComponent = () => {
 
   function populateOutputValue() {
     if (
-      destToken === DEFAULT_VALUE ||
-      srcToken === DEFAULT_VALUE ||
       !inputValue
     )
       return
-
+    console.log("setout", inputValue, exchgRate);
     try {
-      if (srcToken !== ETH && destToken !== ETH) setOutputValue((inputValue*exchgRate).toFixed(4))
-      else if (srcToken === ETH && destToken !== ETH) {
-        const outValue = toEth(toWei(inputValue), 14)
-        setOutputValue(outValue)
-      } else if (srcToken !== ETH && destToken === ETH) {
-        const outValue = toEth(toWei(inputValue, 14))
-        setOutputValue(outValue)
-      }
+      setOutputValue((inputValue*exchgRate).toFixed(4))
     } catch (error) {
       setOutputValue('0')
     }
@@ -241,21 +231,12 @@ const SwapComponent = () => {
 
   function populateInputValue() {
     if (
-      destToken === DEFAULT_VALUE ||
-      srcToken === DEFAULT_VALUE ||
       !outputValue
     )
       return
 
     try {
-      if (srcToken !== ETH && destToken !== ETH) setInputValue((outputValue/exchgRate).toFixed(4))
-      else if (srcToken === ETH && destToken !== ETH) {
-        const outValue = toEth(toWei(outputValue, 14))
-        setInputValue(outValue)
-      } else if (srcToken !== ETH && destToken === ETH) {
-        const outValue = toEth(toWei(outputValue), 14)
-        setInputValue(outValue)
-      }
+      setInputValue((outputValue/exchgRate).toFixed(4))
     } catch (error) {
       setInputValue('0')
     }
@@ -264,16 +245,12 @@ const SwapComponent = () => {
   async function performSwap() {
     setTxPending(true)
 
-    let receipt
+    let receipt;
 
-    if (srcToken === ETH && destToken !== ETH)
-      receipt = await swapEthToToken(destToken, inputValue)
-    else if (srcToken !== ETH && destToken === ETH)
-      receipt = await swapTokenToEth(srcToken, inputValue)
-    else receipt = await swapTokenToToken(srcToken, destToken, inputValue)
+    receipt = await addLiquidity(srcToken, destToken, inputValue, outputValue);
 
     setTxPending(false)
-
+    console.log("data", receipt);
     if (receipt && !receipt.hasOwnProperty('transactionHash'))
       notifyError(receipt)
     else notifySuccess()
@@ -287,4 +264,4 @@ const SwapComponent = () => {
   }
 }
 
-export default SwapComponent
+export default LiquidityComponent
